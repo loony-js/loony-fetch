@@ -1,0 +1,11 @@
+{
+  "name": "loony-fetch",
+  "version": "0.1.0",
+  "description": "http request client",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sankar boro",
+  "license": "ISC"
+}
