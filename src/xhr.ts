@@ -1,7 +1,7 @@
 // mini-axios/xhr.js
-import { parseHeaders } from "./utils.js"; // Assuming parseHeaders is added to utils
+import { parseHeaders } from "./utils"; // Assuming parseHeaders is added to utils
 
-export default function xhrAdapter(config) {
+export default function xhrAdapter(config: any) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
@@ -35,7 +35,7 @@ export default function xhrAdapter(config) {
         resolve(response);
       } else {
         // Axios-like error rejection: reject with the response object
-        const error = new Error(
+        const error: any = new Error(
           `Request failed with status code ${response.status}`
         );
         error.config = config;
@@ -47,14 +47,14 @@ export default function xhrAdapter(config) {
 
     // 5. Error Handlers
     xhr.onerror = () => {
-      const error = new Error("Network Error");
+      const error: any = new Error("Network Error");
       error.config = config;
       error.request = xhr;
       reject(error);
     };
 
     xhr.ontimeout = () => {
-      const error = new Error(`Timeout of ${config.timeout}ms exceeded`);
+      const error: any = new Error(`Timeout of ${config.timeout}ms exceeded`);
       error.config = config;
       error.code = "ECONNABORTED"; // Axios code for timeout
       error.request = xhr;

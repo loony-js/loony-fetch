@@ -1,13 +1,13 @@
 // mini-axios/utils.js
 
-export function isObject(val) {
+export function isObject(val: any): val is Object {
   return val !== null && typeof val === "object";
 }
 
 /**
  * Deep merge function for config objects.
  */
-export function merge(...objs) {
+export function merge(...objs: any[]): any {
   return objs.reduce((acc, obj) => {
     if (!obj) return acc;
     Object.keys(obj).forEach((key) => {
@@ -23,7 +23,7 @@ export function merge(...objs) {
 /**
  * Appends URL parameters to the URL string.
  */
-export function buildURL(url, params) {
+export function buildURL(url: string, params: any): string {
   if (!params) return url;
   const query = Object.keys(params)
     .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
@@ -34,12 +34,12 @@ export function buildURL(url, params) {
 /**
  * Simple utility to parse raw header string from XHR.
  */
-export function parseHeaders(headers) {
-  const parsed = {};
+export function parseHeaders(headers: string): Record<string, string> {
+  const parsed: any = {};
   if (!headers) return parsed;
 
   headers.split("\n").forEach((line) => {
-    const parts = line.split(":");
+    const parts: any = line.split(":");
     const key = parts.shift().trim();
     if (key) {
       parsed[key.toLowerCase()] = parts.join(":").trim();

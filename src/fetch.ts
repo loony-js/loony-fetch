@@ -1,7 +1,7 @@
 // mini-axios/axios.js
-import xhrAdapter from "./xhr.js";
-import httpAdapter from "./http.js";
-import { merge, buildURL } from "./utils.js";
+import xhrAdapter from "./xhr";
+import httpAdapter from "./http";
+import { merge, buildURL } from "./utils";
 
 // Simple check to determine the execution environment
 const isBrowser =
@@ -11,11 +11,13 @@ const isBrowser =
  * Manages the interceptor handlers (onFulfilled, onRejected).
  */
 class InterceptorManager {
+  handlers: Array<{ onFulfilled: Function; onRejected: Function }>;
+
   constructor() {
     this.handlers = [];
   }
 
-  use(onFulfilled, onRejected) {
+  use(onFulfilled: Function, onRejected: Function) {
     this.handlers.push({ onFulfilled, onRejected });
     // Optional: return index to allow ejecting, but keep it simple for now
   }
@@ -24,7 +26,13 @@ class InterceptorManager {
 /**
  * The core Axios class responsible for config, interceptors, and request dispatch.
  */
-export default class Axios {
+export default class Fetch {
+  defaults: any;
+  interceptors: {
+    request: InterceptorManager;
+    response: InterceptorManager;
+  };
+
   constructor(defaultConfig = {}) {
     this.defaults = defaultConfig;
     this.interceptors = {
@@ -36,7 +44,7 @@ export default class Axios {
   /**
    * Main request method, processes config and runs the interceptor chain.
    */
-  request(config) {
+  request(config: any) {
     // 1. Merge default config with runtime config
     config = merge(this.defaults, config);
     config.method = (config.method || "get").toLowerCase();
@@ -62,7 +70,13 @@ export default class Axios {
     }
 
     // 4. Build the Interceptor Promise Chain
-    let chain = [
+    // Arrange as pairs: [onFulfilled, onRejected, ...] where the
+    // dispatcher sits in the middle as a fulfilled handler followed
+    // by an undefined rejection handler. Do NOT reverse the whole
+    // array — that caused the dispatcher to become a rejection
+    // handler, returning the original config instead of sending
+    // the request.
+    let chain: any = [
       // Request interceptors (executed in reverse order, LIFO)
       ...this.interceptors.request.handlers
         .map((i) => [i.onFulfilled, i.onRejected])
@@ -77,7 +91,7 @@ export default class Axios {
       ...this.interceptors.response.handlers
         .map((i) => [i.onFulfilled, i.onRejected])
         .flat(),
-    ].reverse();
+    ];
 
     let promise = Promise.resolve(config);
 
@@ -93,10 +107,10 @@ export default class Axios {
   /**
    * The actual function that executes the request using the appropriate adapter.
    */
-  dispatchRequest(config) {
+  dispatchRequest(config: any) {
     const adapter = isBrowser ? xhrAdapter : httpAdapter;
 
-    return adapter(config).then((res) => {
+    return adapter(config).then((res: any) => {
       // Automatic JSON response parsing
       if (typeof res.data === "string" && res.data.length > 0) {
         try {
@@ -106,7 +120,7 @@ export default class Axios {
           if (contentType.includes("application/json")) {
             res.data = JSON.parse(res.data);
           }
-        } catch (e) {
+        } catch (e: any) {
           // Log parsing error but still return raw response
           console.warn("JSON parsing failed for response:", e.message);
         }
@@ -117,19 +131,19 @@ export default class Axios {
 
   // --- Convenience Methods ---
 
-  get(url, config) {
+  get(url: string, config: any) {
     return this.request(merge(config, { method: "get", url }));
   }
 
-  post(url, data, config) {
+  post(url: string, data: any, config: any) {
     return this.request(merge(config, { method: "post", url, data }));
   }
 
-  put(url, data, config) {
+  put(url: string, data: any, config: any) {
     return this.request(merge(config, { method: "put", url, data }));
   }
 
-  delete(url, config) {
+  delete(url: string, config: any) {
     return this.request(merge(config, { method: "delete", url }));
   }
 }

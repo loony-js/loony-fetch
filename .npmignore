@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Source files
+usage.js
+index.ts
+src/
+tests/
+test/
+__tests__/
+examples/
+docs/
+
+# Build & config
+tsconfig.json
+tsconfig.*.json
+rollup.config.js
+webpack.config.js
+vite.config.ts
+tsup.config.ts
+babel.config.js
+.eslintrc
+.eslintignore
+.prettierrc
+.prettierignore
+
+# Tooling
+.editorconfig
+.nvmrc
+.npmrc
+.yarnrc
+.pnpm-lock.yaml
+yarn.lock
+
+# CI / VCS
+.git/
+.gitignore
+.github/
+.gitlab/
+.vscode/
+
+# Logs & cache
+*.log
+.cache/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.*

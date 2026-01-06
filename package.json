@@ -2,10 +2,35 @@
   "name": "loony-fetch",
   "version": "0.1.0",
   "description": "http request client",
-  "main": "index.js",
+  "private": false,
+  "type": "module",
+  "main": "./lib/index.cjs",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "require": "./lib/index.cjs"
+    }
+  },
+  "files": [
+    "lib"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf lib dist",
+    "build": "npm run clean && tsup ./src/* --format cjs,esm --dts --out-dir lib",
+    "prepublishOnly": "npm run build"
   },
   "author": "Sankar boro",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

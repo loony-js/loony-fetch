@@ -4,7 +4,7 @@ import http from "http";
 import https from "https";
 import { isObject } from "./utils.js";
 
-export default function httpAdapter(config) {
+export default function httpAdapter(config: any) {
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(config.url);
     const isHttps = parsedUrl.protocol === "https:";
@@ -24,7 +24,7 @@ export default function httpAdapter(config) {
       res.on("data", (chunk) => (data += chunk));
 
       res.on("end", () => {
-        const response = {
+        const response: any = {
           data,
           status: res.statusCode,
           statusText: res.statusMessage,
@@ -37,7 +37,7 @@ export default function httpAdapter(config) {
           resolve(response);
         } else {
           // Axios-like error rejection
-          const error = new Error(
+          const error: any = new Error(
             `Request failed with status code ${response.status}`
           );
           error.config = config;
@@ -49,7 +49,7 @@ export default function httpAdapter(config) {
     });
 
     req.on("error", (err) => {
-      const error = new Error(err.message);
+      const error: any = new Error(err.message);
       error.config = config;
       error.request = req;
       reject(error);
@@ -59,7 +59,7 @@ export default function httpAdapter(config) {
     if (config.timeout) {
       req.setTimeout(config.timeout, () => {
         req.destroy();
-        const error = new Error(`Timeout of ${config.timeout}ms exceeded`);
+        const error: any = new Error(`Timeout of ${config.timeout}ms exceeded`);
         error.config = config;
         error.code = "ECONNABORTED";
         error.request = req;
