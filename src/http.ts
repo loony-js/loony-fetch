@@ -1,8 +1,6 @@
-// mini-axios/http.js
 import { URL } from "url";
 import http from "http";
 import https from "https";
-import { isObject } from "./utils.js";
 
 export default function httpAdapter(config: any) {
   return new Promise((resolve, reject) => {
@@ -36,7 +34,6 @@ export default function httpAdapter(config: any) {
         if (response.status >= 200 && response.status < 300) {
           resolve(response);
         } else {
-          // Axios-like error rejection
           const error: any = new Error(
             `Request failed with status code ${response.status}`
           );

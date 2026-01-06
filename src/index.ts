@@ -1,14 +1,14 @@
 import Fetch from "./fetch";
 
 /**
- * Factory function to create a new Axios instance.
+ * Factory function to create a new Fetch instance.
  * @param {object} defaultConfig The default configuration for the instance.
- * @returns {Function} The callable Axios instance (axios(config)).
+ * @returns {Function} The callable Fetch instance (fetch(config)).
  */
 function createInstance(defaultConfig: any) {
   const context: any = new Fetch(defaultConfig);
 
-  // The core callable function: axios(config) -> context.request(config)
+  // The core callable function: fetch(config) -> context.request(config)
   const instance: any = context.request.bind(context);
 
   // Copy all prototype methods (get, post, put, delete) to the callable instance

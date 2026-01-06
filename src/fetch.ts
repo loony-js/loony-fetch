@@ -1,4 +1,3 @@
-// mini-axios/axios.js
 import xhrAdapter from "./xhr";
 import httpAdapter from "./http";
 import { merge, buildURL } from "./utils";
@@ -24,7 +23,7 @@ class InterceptorManager {
 }
 
 /**
- * The core Axios class responsible for config, interceptors, and request dispatch.
+ * The core class responsible for config, interceptors, and request dispatch.
  */
 export default class Fetch {
   defaults: any;
