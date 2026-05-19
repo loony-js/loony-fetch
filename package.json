@@ -1,6 +1,6 @@
 {
   "name": "loony-fetch",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Lightweight, secure Promise-based HTTP client for Node.js and the browser. Supports interceptors, redirect following, AbortController, and hardened against prototype pollution, header injection, and XSRF token leakage.",
   "private": false,
   "type": "module",
