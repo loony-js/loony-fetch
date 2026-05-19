@@ -1,29 +1,52 @@
-import { parseHeaders } from "./utils"; // Assuming parseHeaders is added to utils
+import { parseHeaders, sanitizeHeaderValue, isSameOrigin } from "./utils";
 
 export default function xhrAdapter(config: any) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
-    // 1. URL and Method
     xhr.open(config.method.toUpperCase(), config.url, true);
 
-    // 2. Timeout
     xhr.timeout = config.timeout || 0;
 
-    // 3. Headers
+    // Set headers, sanitizing values to prevent header injection
     Object.keys(config.headers || {}).forEach((key) => {
-      xhr.setRequestHeader(key, config.headers[key]);
+      xhr.setRequestHeader(key, sanitizeHeaderValue(config.headers[key]));
     });
 
-    // 4. State Change Listener
+    // XSRF protection: only inject token for same-origin requests (CVE-2023-45857 fix)
+    if (config.xsrfCookieName && config.xsrfHeaderName) {
+      const currentOrigin = typeof window !== "undefined" ? window.location.href : "";
+      if (!currentOrigin || isSameOrigin(config.url, currentOrigin)) {
+        const xsrfValue = getCookie(config.xsrfCookieName);
+        if (xsrfValue) {
+          xhr.setRequestHeader(config.xsrfHeaderName, xsrfValue);
+        }
+      }
+    }
+
+    // AbortSignal support
+    if (config.signal) {
+      const onAbort = () => {
+        xhr.abort();
+        const error: any = new Error("Request aborted");
+        error.config = config;
+        error.code = "ERR_CANCELED";
+        error.request = xhr;
+        reject(error);
+      };
+      if (config.signal.aborted) {
+        onAbort();
+        return;
+      }
+      config.signal.addEventListener("abort", onAbort, { once: true });
+    }
+
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== 4) return;
 
-      // Clear timeout handler if it was set by the adapter (not necessary for native XHR timeout)
-
       const response = {
         data: xhr.responseText,
-        status: xhr.status === 1223 ? 204 : xhr.status, // IE fix for 204
+        status: xhr.status === 1223 ? 204 : xhr.status,
         statusText: xhr.statusText,
         headers: parseHeaders(xhr.getAllResponseHeaders()),
         config,
@@ -43,7 +66,6 @@ export default function xhrAdapter(config: any) {
       }
     };
 
-    // 5. Error Handlers
     xhr.onerror = () => {
       const error: any = new Error("Network Error");
       error.config = config;
@@ -59,7 +81,14 @@ export default function xhrAdapter(config: any) {
       reject(error);
     };
 
-    // 6. Send Request
     xhr.send(config.data || null);
   });
+}
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp("(?:^|;\\s*)" + encodeURIComponent(name) + "=([^;]*)")
+  );
+  return match ? decodeURIComponent(match[1]) : null;
 }

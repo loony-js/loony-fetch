@@ -1,7 +1,7 @@
 {
   "name": "loony-fetch",
-  "version": "0.1.0",
-  "description": "http request client",
+  "version": "1.0.0",
+  "description": "Lightweight, secure Promise-based HTTP client for Node.js and the browser. Supports interceptors, redirect following, AbortController, and hardened against prototype pollution, header injection, and XSRF token leakage.",
   "private": false,
   "type": "module",
   "main": "./lib/index.cjs",
@@ -15,15 +15,39 @@
     }
   },
   "files": [
-    "lib"
+    "lib",
+    "docs",
+    "README.md"
+  ],
+  "keywords": [
+    "http",
+    "https",
+    "fetch",
+    "request",
+    "client",
+    "ajax",
+    "xhr",
+    "node",
+    "browser",
+    "promise",
+    "interceptors",
+    "secure"
   ],
   "scripts": {
     "clean": "rm -rf lib dist",
     "build": "npm run clean && tsup ./src/* --format cjs,esm --dts --out-dir lib",
     "prepublishOnly": "npm run build"
   },
-  "author": "Sankar boro",
+  "author": "Sankar Boro",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sankar-boro/loony-fetch.git"
+  },
+  "homepage": "https://github.com/sankar-boro/loony-fetch#readme",
+  "bugs": {
+    "url": "https://github.com/sankar-boro/loony-fetch/issues"
+  },
   "devDependencies": {
     "@types/node": "^25.0.3",
     "ts-node": "^10.9.2",

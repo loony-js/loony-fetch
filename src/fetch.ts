@@ -1,126 +1,118 @@
 import xhrAdapter from "./xhr";
 import httpAdapter from "./http";
-import { merge, buildURL } from "./utils";
+import { merge, joinURL, buildURL } from "./utils";
+import { DEFAULT_CONFIG } from "./config";
 
-// Simple check to determine the execution environment
 const isBrowser =
   typeof window !== "undefined" && typeof XMLHttpRequest !== "undefined";
 
-/**
- * Manages the interceptor handlers (onFulfilled, onRejected).
- */
-class InterceptorManager {
-  handlers: Array<{ onFulfilled: Function; onRejected: Function }>;
+export type InterceptorId = number;
+
+class InterceptorManager<T> {
+  private handlers: Array<{
+    onFulfilled: (value: T) => T | Promise<T>;
+    onRejected: (error: any) => any;
+  } | null>;
 
   constructor() {
     this.handlers = [];
   }
 
-  use(onFulfilled: Function, onRejected: Function) {
+  use(
+    onFulfilled: (value: T) => T | Promise<T>,
+    onRejected: (error: any) => any = (e) => Promise.reject(e)
+  ): InterceptorId {
     this.handlers.push({ onFulfilled, onRejected });
-    // Optional: return index to allow ejecting, but keep it simple for now
+    return this.handlers.length - 1;
+  }
+
+  eject(id: InterceptorId): void {
+    if (this.handlers[id]) {
+      this.handlers[id] = null;
+    }
+  }
+
+  get active() {
+    return this.handlers.filter(Boolean) as NonNullable<
+      (typeof this.handlers)[number]
+    >[];
   }
 }
 
-/**
- * The core class responsible for config, interceptors, and request dispatch.
- */
 export default class Fetch {
   defaults: any;
   interceptors: {
-    request: InterceptorManager;
-    response: InterceptorManager;
+    request: InterceptorManager<any>;
+    response: InterceptorManager<any>;
   };
 
-  constructor(defaultConfig = {}) {
-    this.defaults = defaultConfig;
+  constructor(defaultConfig: any = {}) {
+    this.defaults = merge(DEFAULT_CONFIG, defaultConfig);
     this.interceptors = {
       request: new InterceptorManager(),
       response: new InterceptorManager(),
     };
   }
 
-  /**
-   * Main request method, processes config and runs the interceptor chain.
-   */
-  request(config: any) {
-    // 1. Merge default config with runtime config
+  request(config: any): Promise<any> {
     config = merge(this.defaults, config);
     config.method = (config.method || "get").toLowerCase();
 
-    // 2. Build final URL (baseURL + url + params)
-    const finalUrl = config.baseURL ? config.baseURL + config.url : config.url;
+    // Safe URL construction: use joinURL instead of naive string concatenation
+    const finalUrl = config.baseURL
+      ? joinURL(config.baseURL, config.url)
+      : config.url;
 
     config.url = buildURL(finalUrl, config.params);
 
-    // 3. Automatic JSON request body handling
+    // Automatic JSON request body serialization
     if (
       typeof config.data === "object" &&
+      config.data !== null &&
       config.method !== "get" &&
       config.method !== "head"
     ) {
       config.headers = config.headers || {};
-      // Only set Content-Type if user hasn't explicitly set it
       if (!config.headers["Content-Type"] && !config.headers["content-type"]) {
         config.headers["Content-Type"] = "application/json";
       }
-      // Stringify the data
       config.data = JSON.stringify(config.data);
     }
 
-    // 4. Build the Interceptor Promise Chain
-    // Arrange as pairs: [onFulfilled, onRejected, ...] where the
-    // dispatcher sits in the middle as a fulfilled handler followed
-    // by an undefined rejection handler. Do NOT reverse the whole
-    // array — that caused the dispatcher to become a rejection
-    // handler, returning the original config instead of sending
-    // the request.
-    let chain: any = [
-      // Request interceptors (executed in reverse order, LIFO)
-      ...this.interceptors.request.handlers
+    // Build interceptor chain (request interceptors run LIFO, response FIFO)
+    const chain: any[] = [
+      ...this.interceptors.request.active
         .map((i) => [i.onFulfilled, i.onRejected])
         .flat()
         .reverse(),
 
-      // Dispatcher (The actual request execution)
       this.dispatchRequest.bind(this),
       undefined,
 
-      // Response interceptors (executed in standard order, FIFO)
-      ...this.interceptors.response.handlers
+      ...this.interceptors.response.active
         .map((i) => [i.onFulfilled, i.onRejected])
         .flat(),
     ];
 
     let promise = Promise.resolve(config);
-
-    // Run the chain
     while (chain.length) {
-      // .then(onFulfilled, onRejected)
       promise = promise.then(chain.shift(), chain.shift());
     }
-
     return promise;
   }
 
-  /**
-   * The actual function that executes the request using the appropriate adapter.
-   */
-  dispatchRequest(config: any) {
+  dispatchRequest(config: any): Promise<any> {
     const adapter = isBrowser ? xhrAdapter : httpAdapter;
 
     return adapter(config).then((res: any) => {
-      // Automatic JSON response parsing
       if (typeof res.data === "string" && res.data.length > 0) {
         try {
-          // Check for 'application/json' header (case-insensitive)
           const contentType =
             res.headers["content-type"] || res.headers["Content-Type"] || "";
           if (contentType.includes("application/json")) {
             res.data = JSON.parse(res.data);
           }
         } catch (e: any) {
-          // Log parsing error but still return raw response
           console.warn("JSON parsing failed for response:", e.message);
         }
       }
@@ -128,21 +120,31 @@ export default class Fetch {
     });
   }
 
-  // --- Convenience Methods ---
-
-  get(url: string, config: any) {
+  get(url: string, config?: any): Promise<any> {
     return this.request(merge(config, { method: "get", url }));
   }
 
-  post(url: string, data: any, config: any) {
+  post(url: string, data?: any, config?: any): Promise<any> {
     return this.request(merge(config, { method: "post", url, data }));
   }
 
-  put(url: string, data: any, config: any) {
+  put(url: string, data?: any, config?: any): Promise<any> {
     return this.request(merge(config, { method: "put", url, data }));
   }
 
-  delete(url: string, config: any) {
+  patch(url: string, data?: any, config?: any): Promise<any> {
+    return this.request(merge(config, { method: "patch", url, data }));
+  }
+
+  delete(url: string, config?: any): Promise<any> {
     return this.request(merge(config, { method: "delete", url }));
+  }
+
+  head(url: string, config?: any): Promise<any> {
+    return this.request(merge(config, { method: "head", url }));
+  }
+
+  options(url: string, config?: any): Promise<any> {
+    return this.request(merge(config, { method: "options", url }));
   }
 }
